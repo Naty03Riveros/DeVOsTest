@@ -8,7 +8,7 @@ pipeline {
         stage('Clonar Repositorio') {
             steps {
                 echo 'Clonando el repositorio...'
-                git url: 'https://github.com/Naty03Riveros/DeVOsTest.git'
+                git url: 'https://github.com/Naty03Riveros/DeVOsTest.git', branch: 'main' // Usar la rama correcta
             }
         }
         stage('Análisis SonarQube') {
