@@ -1,43 +1,65 @@
 pipeline {
     agent any
+
     environment {
-        SONARQUBE_SERVER = 'NPY'  // Nombre del servidor SonarQube configurado en Jenkins
+        SONARQUBE = 'test'  // Nombre del servidor SonarQube configurado en Jenkins
     }
+
     stages {
-        stage('Checkout') {
+        stage('Clonar Repositorio') {
             steps {
                 echo 'Clonando el repositorio...'
                 git branch: 'main', url: 'https://github.com/Naty03Riveros/DeVOsTest.git'
             }
         }
-        stage('SonarQube Analysis') {
+
+        stage('Preparar Entorno') {
+            steps {
+                echo 'Creando y activando entorno virtual...'
+                sh 'python3 -m venv venv'
+                sh 'source venv/bin/activate'
+                echo 'Instalando dependencias del proyecto...'
+                sh 'pip install -r requirements.txt'
+            }
+        }
+
+        stage('Análisis SonarQube') {
             steps {
                 script {
-                    echo 'Iniciando el análisis con SonarQube...'
-                    withSonarQubeEnv('NPY') {  // Nombre del servidor SonarQube
-                        sh 'sonar-scanner -Dsonar.projectKey=DeVOsTest -Dsonar.sources=./ -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_AUTH_TOKEN'
-                    }
+                    // Ejecutando el análisis con SonarQube
+                    sh '''
+                    source venv/bin/activate
+                    sonar-scanner \
+                    -Dsonar.projectKey=DeVOsTest \
+                    -Dsonar.sources=. \
+                    -Dsonar.host.url=http://localhost:9000 \
+                    -Dsonar.login=squ_3266dabd4f5d0edb2d8c41ae1ae5d4865280e593
+                    '''
                 }
             }
         }
-        stage('Wait for Quality Gate') {
+
+        stage('Probar') {
             steps {
-                script {
-                    echo 'Esperando la verificación de la calidad...'
-                    waitForQualityGate abortPipeline: true
-                }
+                echo 'Ejecutando pruebas...'
+                sh 'pytest'
+            }
+        }
+
+        stage('Desplegar') {
+            steps {
+                echo 'Desplegando la aplicación...'
+                // Agrega aquí tus comandos de despliegue
             }
         }
     }
+
     post {
-        always {
-            echo 'Pipeline finalizado.'
-        }
         success {
-            echo 'Análisis completado con éxito.'
+            echo '¡El pipeline fue exitoso!'
         }
         failure {
-            echo 'Hubo errores en el análisis.'
+            echo 'Hubo un error en el pipeline.'
         }
     }
 }
